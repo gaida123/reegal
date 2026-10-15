@@ -95,7 +95,7 @@ class Orchestrator:
         assessment_id = str(uuid.uuid4())
         applicability = self.services.applicability.evaluate(profile)
         planned = self.plan(profile, applicability)
-        cache = self._finding_cache(session)
+        cache = await asyncio.to_thread(self._finding_cache, session)
         # Keep retrieval/prefetch concurrent, but avoid a burst of three large structured
         # reports against one provider capacity pool. This gate also covers escalation
         # re-reports in the same assessment.
