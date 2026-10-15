@@ -1,5 +1,6 @@
 """Assessment routes: run an assessment, read its agent trace, read a requirement."""
 
+import asyncio
 from datetime import datetime, timezone
 from typing import Annotated
 
@@ -57,10 +58,11 @@ async def assess(
     # A cache hit is safe only for the exact knowledge-base revision that produced it. If TiDB
     # cannot provide that revision, return the live result rather than risk showing stale advice.
     try:
-        knowledge_base_version = kb_version(services.retrieval)
+        knowledge_base_version = await asyncio.to_thread(kb_version, services.retrieval)
     except Exception:  # noqa: BLE001 - cache availability must not break an assessment response
         knowledge_base_version = None
-    return with_cache(
+    return await asyncio.to_thread(
+        with_cache,
         session,
         profile,
         live,
