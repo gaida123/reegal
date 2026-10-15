@@ -12,6 +12,7 @@ report call. Unchanged. Chat no longer uses the tool loop; it gathers evidence i
 In both modes applicability, status, score and scope come from code, never from the model.
 """
 
+import asyncio
 from typing import Any, ClassVar
 
 from google.genai import types
@@ -213,8 +214,11 @@ class BaseAgent:
             f"gathering evidence for {len(planned)} requirement(s)",
             source=PREFETCH,
         )
-        toolbox.retrieve_evidence_many(
-            [(req.id, query) for _, req in planned for query in default_queries(req)], source=PREFETCH
+        # Blocking TiDB/embedding calls: keep them off the event loop so other requests are served.
+        await asyncio.to_thread(
+            toolbox.retrieve_evidence_many,
+            [(req.id, query) for _, req in planned for query in default_queries(req)],
+            source=PREFETCH,
         )
 
         facts_read: dict[str, dict[str, Any]] = {}  # one lookup (and one trace entry) per fact key
