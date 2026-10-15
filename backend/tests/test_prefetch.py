@@ -359,13 +359,10 @@ def test_status_not_from_gemini(client: TestClient, prefetch_mode: None) -> None
 def test_unknown_fact_preserved(client: TestClient, fake: FakeGemini, prefetch_mode: None) -> None:
     assess_maya(client)
 
-    prompt = next(p for p in fake.report_prompts if "plans_to_hire" in p)
-    for line in prompt.splitlines():
-        if line.startswith("- plans_to_hire:"):
-            assert line.endswith(UNKNOWN_FACT) or line.endswith("unknown")
-    assert f"- plans_to_hire: {UNKNOWN_FACT}" in prompt
-    assert "- plans_to_hire: False" not in prompt
-    assert "- has_employees: False" in prompt  # a confirmed false fact still reads as false
+    prompts = [p for p in fake.report_prompts if "plans_to_hire" in p]  # agent order is not fixed
+    assert any(f"- plans_to_hire: {UNKNOWN_FACT}" in p for p in prompts)
+    assert all("- plans_to_hire: False" not in p for p in prompts)
+    assert any("- has_employees: False" in p for p in prompts)  # a confirmed false fact still reads as false
 
 
 # --- the feature flag -------------------------------------------------------------------------
