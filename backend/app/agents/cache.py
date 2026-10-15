@@ -10,6 +10,7 @@ import json
 from datetime import datetime, timezone
 from decimal import Decimal
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -63,7 +64,10 @@ def save(session: Session, fingerprint: str, response: AssessmentResponse) -> No
         row.response = data
         flag_modified(row, "response")
         row.created_at = datetime.now(timezone.utc)
-    session.commit()
+    try:
+        session.commit()
+    except IntegrityError:  # a concurrent run saved the same fingerprint first; its result is equivalent
+        session.rollback()
 
 
 def _aware(value: datetime) -> datetime:
