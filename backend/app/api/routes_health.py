@@ -39,6 +39,9 @@ def health() -> HealthResponse:
 
 @router.get("/health/gemini")
 async def health_gemini() -> GeminiHealthResponse:
+    # Unauthenticated and spends Gemini quota, so it is a dev-only probe like /dev/load-demo.
+    if not get_settings().use_stubs:
+        raise HTTPException(status_code=404, detail="Not available when USE_STUBS=false")
     try:
         reply = await generate_structured(
             prompt='Return ok=true and echo="pong".',
